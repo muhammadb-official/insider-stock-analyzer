@@ -15,16 +15,27 @@ insider_trades = pd.DataFrame([
     {'ticker':'TSLA','buyer':'CEO Elon Musk','position':'CEO','date':'2025-06-08','amount':5e6,'win_rate':0.91},
 ])
 
-# Check halal status using Zoya API
-def check_halal(ticker):
+# Check halal status
+def check_halal_manual(ticker):
     try:
-        headers = {"x-api-key": ZOYA_API_KEY}
-        response = requests.get(f"https://api.zoya.finance/v1/screening/ticker/{ticker}", headers=headers)
-        if response.status_code == 200:
-            data = response.json()
-            return data.get("isHalal", False)
+        stock = yf.Ticker(ticker)
+        info = stock.info
+
+        market_cap = info.get('marketCap')
+        total_debt = info.get('totalDebt', 0)
+        cash = info.get('totalCash', 0)
+        receivables = info.get('totalReceivables', 0)
+
+        if not market_cap or market_cap == 0:
+            return False
+
+        debt_ratio = total_debt / market_cap
+        cash_ratio = cash / market_cap
+        receivables_ratio = receivables / market_cap
+
+        if (debt_ratio < 0.33 and cash_ratio < 0.33 and receivables_ratio < 0.49):
+            return True
         else:
-            st.warning(f"Zoya API error for {ticker}: {response.status_code}")
             return False
     except Exception as e:
         st.error(f"Halal check failed for {ticker}: {e}")
