@@ -1,9 +1,8 @@
-# .github/workflows/scrape.yml
 name: Daily Insider Trade Scraper
 
 on:
   schedule:
-    - cron: "0 12 * * *"  # Every day at 12:00 UTC
+    - cron: "0 12 * * *"
   workflow_dispatch:
 
 jobs:
@@ -29,5 +28,5 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add scraped_trades.csv
-          git commit -m "Update scraped trades [auto]" || echo "No changes"
+          git commit -m "Auto-update scraped_trades.csv" || echo "No changes"
           git push
