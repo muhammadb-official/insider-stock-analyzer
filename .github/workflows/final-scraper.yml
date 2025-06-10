@@ -1,0 +1,35 @@
+name: Final Clean Halal Scraper
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    name: Run Clean Scraper
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Confirm Python version
+        run: python --version
+
+      - name: Install dependencies
+        run: pip install pandas beautifulsoup4 requests
+
+      - name: Run scraper
+        run: python scraper.py
+
+      - name: Commit scraped data
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add scraped_trades.csv
+          git commit -m "Auto-update scraped_trades.csv" || echo "No changes"
+          git push
