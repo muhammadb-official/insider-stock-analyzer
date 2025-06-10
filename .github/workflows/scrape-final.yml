@@ -1,4 +1,4 @@
-name: Daily Insider Trade Scraper
+name: Halal Insider Trade Scraper (Clean)
 
 on:
   schedule:
