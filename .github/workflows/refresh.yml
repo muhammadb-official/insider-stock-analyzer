@@ -1,22 +1,33 @@
-name: Daily Refresh
+# .github/workflows/scrape.yml
+name: Daily Insider Trade Scraper
 
 on:
   schedule:
-    - cron: '0 10 * * *'  # 6 AM EST
+    - cron: "0 12 * * *"  # Every day at 12:00 UTC
   workflow_dispatch:
 
 jobs:
-  refresh:
+  run-scraper:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Force Streamlit Cloud to rebuild
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
+      - name: Install dependencies
+        run: pip install pandas beautifulsoup4 requests
+
+      - name: Run scraper
+        run: python scraper.py
+
+      - name: Commit scraped data
         run: |
-          date > timestamp.txt
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add timestamp.txt
-          git commit -m "Auto refresh $(date)"
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add scraped_trades.csv
+          git commit -m "Update scraped trades [auto]" || echo "No changes"
           git push
