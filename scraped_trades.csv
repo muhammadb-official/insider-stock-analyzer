@@ -1,0 +1,4 @@
+ticker,buyer,position,date,amount,source
+MSFT,Satya Nadella,CEO,2025-05-15,3000000,Insider
+NVDA,Senator John Doe,Congress,2025-05-10,200000,Congress
+META,NVIDIA Corp,Institutional,2025-05-08,10000000,Institutional
