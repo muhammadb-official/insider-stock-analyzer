@@ -6,7 +6,11 @@ import smtplib
 from email.message import EmailMessage
 
 # Load pre-scraped data
-df = pd.read_csv("scraped_trades.csv")
+import os
+if os.path.exists("scraped_trades.csv"):
+    df = pd.read_csv("scraped_trades.csv")
+else:
+    df = pd.DataFrame(columns=["ticker", "buyer", "position", "date", "amount", "source"])
 df['date'] = pd.to_datetime(df['date'])
 df = df[df['date'] >= datetime.now() - pd.Timedelta(days=60)]
 
