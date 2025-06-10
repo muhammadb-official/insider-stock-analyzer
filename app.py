@@ -4,13 +4,22 @@ import yfinance as yf
 import smtplib
 from email.message import EmailMessage
 
-# Mock insider trades
+# -----------------------------
+# STEP 1: Simulated Insider Trade Feed (Replace w/API/scraping)
+# -----------------------------
 insider_trades = pd.DataFrame([
-    {'ticker': 'NVDA', 'buyer': 'CEO Jensen Huang', 'position': 'CEO', 'date': '2025-06-08', 'amount': 8e6, 'win_rate': 0.93},
-    {'ticker': 'TSLA', 'buyer': 'CEO Elon Musk', 'position': 'CEO', 'date': '2025-06-08', 'amount': 5e6, 'win_rate': 0.91},
+    {'ticker': 'MSFT', 'buyer': 'Satya Nadella', 'position': 'CEO', 'date': '2025-06-07', 'amount': 3000000, 'win_rate': 0.92},
+    {'ticker': 'AAPL', 'buyer': 'Tim Cook', 'position': 'CEO', 'date': '2025-06-07', 'amount': 5000000, 'win_rate': 0.90},
+    {'ticker': 'NVDA', 'buyer': 'Senator John Doe', 'position': 'Senator', 'date': '2025-06-07', 'amount': 200000, 'win_rate': 0.91},
+    {'ticker': 'META', 'buyer': 'Rep. Jane Smith', 'position': 'House Rep', 'date': '2025-06-07', 'amount': 150000, 'win_rate': 0.93},
 ])
 
-# Manual Halal Screening (AAOIFI-compliant)
+# Filter for insiders with high win rate
+df = insider_trades[insider_trades['win_rate'] >= 0.90].copy()
+
+# -----------------------------
+# STEP 2: Manual Halal Screening
+# -----------------------------
 def check_halal_manual(ticker):
     try:
         stock = yf.Ticker(ticker)
@@ -33,7 +42,9 @@ def check_halal_manual(ticker):
         st.error(f"Halal check failed for {ticker}: {e}")
         return False
 
-# Pull financials
+# -----------------------------
+# STEP 3: Financial Metrics + Recommendation
+# -----------------------------
 def fetch_financials(tkr):
     try:
         stock = yf.Ticker(tkr)
@@ -49,7 +60,6 @@ def fetch_financials(tkr):
         st.error(f"Financial fetch failed for {tkr}: {e}")
         return {}
 
-# Recommend action
 def recommend(f):
     try:
         if f['PE'] and f['PEG'] and f['ROE'] and f['Quick']:
@@ -61,7 +71,9 @@ def recommend(f):
     except:
         return 'Hold'
 
-# Email sending function
+# -----------------------------
+# STEP 4: Email Output
+# -----------------------------
 def send_email(df):
     EMAIL_ADDRESS = "your_email@gmail.com"
     EMAIL_PASSWORD = "your_app_password"
@@ -77,13 +89,13 @@ def send_email(df):
         smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
         smtp.send_message(msg)
 
-# Streamlit UI
-st.title("📈 Halal Insider Stock Analyzer")
+# -----------------------------
+# STEP 5: Main Streamlit App
+# -----------------------------
+st.title("📈 Halal Insider Trade Analyzer")
 
-df = insider_trades[insider_trades['win_rate'] >= 0.90].copy()
 results = []
-
-st.subheader("🧪 Debug: Processing Tickers")
+st.subheader("🧪 Processing Trades...")
 for _, r in df.iterrows():
     st.write(f"🔍 Ticker: {r['ticker']}")
     fin = fetch_financials(r['ticker'])
@@ -94,9 +106,11 @@ for _, r in df.iterrows():
 
 res_df = pd.DataFrame(results)
 
-st.subheader("🧾 Raw Results (Before Filter)")
+# Show full unfiltered table
+st.subheader("🧾 Raw Results")
 st.dataframe(res_df)
 
+# Sidebar filter
 if st.sidebar.checkbox("✅ Show Only Halal", value=True):
     res_df = res_df[res_df['Halal'] == True]
 
@@ -107,6 +121,7 @@ st.write("✅ **Buy Now + Halal Picks**")
 buy_now_df = res_df[(res_df['Recommendation'] == 'Buy Now') & (res_df['Halal'] == True)]
 st.write(buy_now_df)
 
+# Manual email trigger
 if st.button("📤 Send Daily Email Now"):
     send_email(buy_now_df)
     st.success("✅ Email sent to muhammad_bangi@hotmail.com")
