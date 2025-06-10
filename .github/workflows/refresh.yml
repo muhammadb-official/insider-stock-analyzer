@@ -1,0 +1,22 @@
+name: Daily Refresh
+
+on:
+  schedule:
+    - cron: '0 10 * * *'  # 6 AM EST
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Force Streamlit Cloud to rebuild
+        run: |
+          date > timestamp.txt
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add timestamp.txt
+          git commit -m "Auto refresh $(date)"
+          git push
