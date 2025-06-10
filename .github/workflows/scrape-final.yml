@@ -1,24 +1,34 @@
 name: Halal Insider Trade Scraper (Clean)
 
 on:
-  schedule:
-    - cron: "0 12 * * *"  # daily at 12:00 UTC
   workflow_dispatch:
+  schedule:
+    - cron: "0 12 * * *"
 
 jobs:
   run-scraper:
+    name: Run Scraper
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10  # 🔥 CRITICAL FIX
+          python-version: '3.10'
+
+      - name: Display Python version (debug)
+        run: python --version
 
       - name: Install dependencies
-        run: pip install pandas beautifulsoup4 requests
+        run: |
+          pip install pandas beautifulsoup4 requests
 
       - name: Run scraper
         run: python scraper.py
