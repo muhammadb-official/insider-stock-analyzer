@@ -9,32 +9,44 @@ import os
 # Load Zoya API key from GitHub secrets
 ZOYA_API_KEY = os.getenv("ZOYA_API_KEY")
 
-# Mock insider trades for now
+# Mock insider trades for testing
 insider_trades = pd.DataFrame([
     {'ticker':'NVDA','buyer':'CEO Jensen Huang','position':'CEO','date':'2025-06-08','amount':8e6,'win_rate':0.93},
     {'ticker':'TSLA','buyer':'CEO Elon Musk','position':'CEO','date':'2025-06-08','amount':5e6,'win_rate':0.91},
 ])
 
+# Check halal status using Zoya API
 def check_halal(ticker):
     try:
         headers = {"x-api-key": ZOYA_API_KEY}
         response = requests.get(f"https://api.zoya.finance/v1/screening/ticker/{ticker}", headers=headers)
-        data = response.json()
-        return data.get("isHalal", False)
-    except:
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("isHalal", False)
+        else:
+            st.warning(f"Zoya API error for {ticker}: {response.status_code}")
+            return False
+    except Exception as e:
+        st.error(f"Halal check failed for {ticker}: {e}")
         return False
 
+# Pull basic financials from Yahoo
 def fetch_financials(tkr):
-    stock = yf.Ticker(tkr)
-    i = stock.info
-    return {
-        'PE': i.get('trailingPE'),
-        'PEG': i.get('pegRatio'),
-        'ROE': i.get('returnOnEquity')*100 if i.get('returnOnEquity') else None,
-        'Quick': i.get('quickRatio'),
-        'RevGrowth': i.get('revenueGrowth')*100 if i.get('revenueGrowth') else None,
-    }
+    try:
+        stock = yf.Ticker(tkr)
+        i = stock.info
+        return {
+            'PE': i.get('trailingPE'),
+            'PEG': i.get('pegRatio'),
+            'ROE': i.get('returnOnEquity') * 100 if i.get('returnOnEquity') else None,
+            'Quick': i.get('quickRatio'),
+            'RevGrowth': i.get('revenueGrowth') * 100 if i.get('revenueGrowth') else None,
+        }
+    except Exception as e:
+        st.error(f"Financial fetch failed for {tkr}: {e}")
+        return {}
 
+# Recommend action based on metrics
 def recommend(f):
     try:
         if f['PE'] and f['PEG'] and f['ROE'] and f['Quick']:
@@ -46,3 +58,58 @@ def recommend(f):
     except:
         return 'Hold'
 
+# Send email to user
+def send_email(df):
+    EMAIL_ADDRESS = "your_email@gmail.com"
+    EMAIL_PASSWORD = "your_app_password"
+    msg = EmailMessage()
+    msg['Subject'] = 'Daily Halal Stock Picks'
+    msg['From'] = EMAIL_ADDRESS
+    msg['To'] = "muhammad_bangi@hotmail.com"
+    html = df.to_html(index=False)
+    msg.set_content("Today's top stock picks.")
+    msg.add_alternative(f"<h3>Buy Now + Halal Stocks</h3>{html}", subtype='html')
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+        smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+        smtp.send_message(msg)
+
+# App Title
+st.title("📈 Halal Insider Stock Analyzer")
+
+# Core data processing
+df = insider_trades[insider_trades['win_rate'] >= 0.90].copy()
+results = []
+
+st.subheader("🧪 Debug: Processing Tickers")
+for _, r in df.iterrows():
+    st.write(f"🔍 Ticker: {r['ticker']}")
+    fin = fetch_financials(r['ticker'])
+    halal = check_halal(r['ticker'])
+    rec = recommend(fin) if halal else "Not Halal"
+    entry = {**r.to_dict(), **fin, 'Halal': halal, 'Recommendation': rec}
+    results.append(entry)
+
+# Convert to DataFrame
+res_df = pd.DataFrame(results)
+
+# Show raw data for debug
+st.subheader("🧾 Raw Results (Before Filter)")
+st.dataframe(res_df)
+
+# Halal filter
+if st.sidebar.checkbox("✅ Show Only Halal", value=True):
+    res_df = res_df[res_df['Halal'] == True]
+
+# Main data table
+st.subheader("📊 Final Filtered Results")
+st.dataframe(res_df)
+
+# Show Buy Now picks
+st.write("✅ **Buy Now + Halal Picks**")
+buy_now_df = res_df[(res_df['Recommendation'] == 'Buy Now') & (res_df['Halal'] == True)]
+st.write(buy_now_df)
+
+# Email button
+if st.button("📤 Send Daily Email Now"):
+    send_email(buy_now_df)
+    st.success("✅ Email sent to muhammad_bangi@hotmail.com")
