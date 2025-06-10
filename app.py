@@ -36,4 +36,13 @@ def fetch_financials(tkr):
     }
 
 def recommend(f):
-    if f['PE'] and f['PEG'] and f['ROE'] and f['Quick'] and f['PEG'] < 2 and f['ROE'] > 20 a
+    try:
+        if f['PE'] and f['PEG'] and f['ROE'] and f['Quick']:
+            if f['PEG'] < 2 and f['ROE'] > 20 and f['Quick'] > 1:
+                return 'Buy Now'
+            elif f['PEG'] > 2 or f['Quick'] < 1:
+                return 'Wait'
+        return 'Hold'
+    except:
+        return 'Hold'
+
