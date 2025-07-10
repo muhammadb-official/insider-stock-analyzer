@@ -1,48 +1,47 @@
-import requests
-from requests_ip_rotator import ApiGateway
-from bs4 import BeautifulSoup
 import pandas as pd
-import time
-
-# === Set up AWS IP-rotator gateway for OpenInsider ===
-gateway = ApiGateway("https://openinsider.com")
-gateway.start()
-
-# Mount adapter to route through API Gateway
-session = requests.Session()
-session.mount("https://openinsider.com", gateway)
-
-headers = {
-    "User-Agent": "Mozilla/5.0 (compatible; HalalScraper/1.0; +https://yourdomain.com)"
-}
+import requests
+from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
 
 def scrape_openinsider():
     url = "https://openinsider.com/screener?s=&o=&pl=&ph=&ll=&lh=&fd=0&fdr=&td=0&tdr=&fdly=60&tdly=0&xp=1&vl=&vh=&t=&tc=1&ty=1&sortcol=0&maxresults=1000"
-    r = session.get(url, headers=headers, timeout=15)
+    headers = {"User-Agent": "Mozilla/5.0"}
+    r = requests.get(url, headers=headers)
     soup = BeautifulSoup(r.text, "html.parser")
     table = soup.find("table", class_="tinytable")
-    if not table:
-        raise Exception("Could not find OpenInsider data table")
-    rows = table.find_all("tr")[1:]
-    data = [[td.text.strip() for td in row.find_all("td")] for row in rows]
-    return pd.DataFrame(data)
+    df = pd.read_html(str(table))[0]
+    df = df.rename(columns={"Ticker": "ticker", "Filer Name": "buyer", "Title": "position", "Trade Date": "date", "Qty": "amount"})
+    df = df[["ticker", "buyer", "position", "date", "amount"]]
+    df["source"] = "Insider"
+    return df
 
 def scrape_congress():
-    # placeholder stub
-    return pd.DataFrame()
+    url = "https://house-stock-watcher-data.s3-us-west-2.amazonaws.com/data/all_transactions.json"
+    r = requests.get(url)
+    data = r.json()
+    df = pd.DataFrame(data)
+    df = df[df["transaction_date"] >= (datetime.now() - timedelta(days=60)).strftime("%Y-%m-%d")]
+    df = df.rename(columns={"ticker": "ticker", "representative": "buyer", "type": "position", "transaction_date": "date", "amount": "amount"})
+    df = df[["ticker", "buyer", "position", "date", "amount"]]
+    df["source"] = "Congress"
+    return df
 
 def scrape_sec():
-    # placeholder stub
-    return pd.DataFrame()
+    url = "https://www.sec.gov/files/company_tickers_exchange.json"
+    r = requests.get(url)
+    data = r.json()
+    rows = []
+    for company in data:
+        rows.append({
+            "ticker": company.get("ticker", ""),
+            "buyer": company.get("title", ""),
+            "position": "Institution",
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "amount": 0,
+            "source": "Institution"
+        })
+    return pd.DataFrame(rows)
 
-if __name__ == "__main__":
-    try:
-        df = pd.concat([scrape_openinsider(), scrape_congress(), scrape_sec()], ignore_index=True)
-        df.to_csv("scraped_trades.csv", index=False)
-        print("✅ Scrape successful. Data saved.")
-    except Exception as e:
-        print(f"❌ Scraping failed: {e}")
-        gateway.shutdown()
-        exit(1)
-    finally:
-        gateway.shutdown()
+# Skip all halal filtering logic
+df = pd.concat([scrape_openinsider(), scrape_congress(), scrape_sec()], ignore_index=True)
+df.to_csv("scraped_trades.csv", index=False)
