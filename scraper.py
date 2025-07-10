@@ -1,3 +1,8 @@
+print("=== STARTING SCRAPER ===")
+
+# ... your existing code ...
+
+print("=== SCRAPER COMPLETE ===")
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -37,3 +42,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+print("=== STARTING SCRAPER ===")
+
+# ... your existing code ...
+
+print("=== SCRAPER COMPLETE ===")
