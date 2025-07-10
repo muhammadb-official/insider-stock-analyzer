@@ -1,51 +1,55 @@
-print("=== STARTING SCRAPER ===")
+import csv
+from datetime import datetime
+import random
+import time
 
-# ... your existing code ...
+# Placeholder scraper to simulate real results
+def fetch_trades():
+    print("🔍 Simulating trade scraping...")
+    time.sleep(2)
 
-print("=== SCRAPER COMPLETE ===")
-raise Exception("Debug test error to verify logs")
+    fake_data = [
+        {
+            "ticker": "MSFT",
+            "buyer": "Satya Nadella",
+            "position": "CEO",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "amount": 3000000,
+            "source": "Insider",
+            "PE": 38.91,
+            "PEG": "None",
+            "ROE": 33.61,
+            "Quick": 1.244,
+            "RevGrowth": 13.3,
+            "Halal": True,
+        },
+        {
+            "ticker": "AAPL",
+            "buyer": "Tim Cook",
+            "position": "CEO",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "amount": random.randint(500000, 2000000),
+            "source": "Insider",
+            "PE": 28.5,
+            "PEG": 1.2,
+            "ROE": 29.0,
+            "Quick": 1.12,
+            "RevGrowth": 9.4,
+            "Halal": True,
+        },
+    ]
+    return fake_data
 
-import pandas as pd
-import requests
-from bs4 import BeautifulSoup
-
-def scrape_openinsider():
-    print("Starting OpenInsider scrape...", flush=True)
-    url = "https://openinsider.com/screener?s=&o=&pl=&ph=&ll=&lh=&fd=0&fdr=&td=0&tdr=&fdly=60&tdly=0&xp=1&vl=&vh=&t=&tc=1&ty=1&sortcol=0&maxresults=1000"
-    headers = {"User-Agent": "Mozilla/5.0"}
-    
-    try:
-        r = requests.get(url, headers=headers, timeout=20)
-        soup = BeautifulSoup(r.text, "html.parser")
-        table = soup.find("table", class_="tinytable")
-        rows = table.find_all("tr")[1:]
-
-        data = []
-        for row in rows:
-            cols = [td.text.strip() for td in row.find_all("td")]
-            if cols:
-                data.append(cols)
-        
-        df = pd.DataFrame(data)
-        print(f"✅ Scraped {len(df)} rows from OpenInsider.", flush=True)
-        return df
-    except Exception as e:
-        print("❌ Failed to scrape OpenInsider:", e, flush=True)
-        return pd.DataFrame()
-
-def main():
-    df = scrape_openinsider()
-
-    if not df.empty:
-        df.to_csv("scraped_trades.csv", index=False)
-        print("✅ Saved scraped_trades.csv", flush=True)
-    else:
-        print("⚠️ No data scraped. CSV not updated.", flush=True)
+def save_to_csv(data, filename="scraped_trades.csv"):
+    print(f"📦 Saving {len(data)} trades to {filename}...")
+    with open(filename, mode="w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=data[0].keys())
+        writer.writeheader()
+        writer.writerows(data)
+    print("✅ Data saved successfully.")
 
 if __name__ == "__main__":
-    main()
-print("=== STARTING SCRAPER ===")
-
-# ... your existing code ...
-
-print("=== SCRAPER COMPLETE ===")
+    print("🚀 Starting scraper.py...")
+    trades = fetch_trades()
+    save_to_csv(trades)
+    print("🏁 Scraper finished.")
