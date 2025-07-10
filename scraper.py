@@ -3,6 +3,8 @@ print("=== STARTING SCRAPER ===")
 # ... your existing code ...
 
 print("=== SCRAPER COMPLETE ===")
+raise Exception("Debug test error to verify logs")
+
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
